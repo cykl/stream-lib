@@ -233,6 +233,17 @@ public class HyperLogLog implements ICardinality
         }
         return new HyperLogLog(this.log2m, mergedSet);
     }
+    
+    public void merge(HyperLogLog hll) throws CardinalityMergeException
+    {
+           if (hll.sizeof() != sizeof())
+            {
+                throw new HyperLogLogMergeException("Cannot merge estimators of different sizes");
+            }
+            registerSet.merge(hll.registerSet);
+        }
+    
+    
 
     public static class Builder implements IBuilder<ICardinality>, Serializable
     {
