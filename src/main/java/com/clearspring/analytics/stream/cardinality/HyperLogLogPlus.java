@@ -141,7 +141,7 @@ public class HyperLogLogPlus implements ICardinality
 
 
     private ArrayList<Integer> tmpSet;
-    private List<byte[]> sparseSet;
+    private List<Integer> sparseSet;
     //How big the sparse set is allowed to get before we convert to 'normal'
     private int sparseSetThreshold;
 
@@ -174,20 +174,20 @@ public class HyperLogLogPlus implements ICardinality
      */
     public HyperLogLogPlus(int p, int sp)
     {
-        this(p, sp, new ArrayList<byte[]>(), new RegisterSet((int) Math.pow(2, p)));
+        this(p, sp, new ArrayList<Integer>(), new RegisterSet((int) Math.pow(2, p)));
     }
 
-    private HyperLogLogPlus(int p, int sp, List<byte[]> sparseSet)
+    private HyperLogLogPlus(int p, int sp, List<Integer> sparseSet)
     {
         this(p, sp, sparseSet, new RegisterSet((int) Math.pow(2, p)));
     }
 
     private HyperLogLogPlus(int p, int sp, RegisterSet registerSet)
     {
-        this(p, sp, new ArrayList<byte[]>(), registerSet);
+        this(p, sp, new ArrayList<Integer>(), registerSet);
     }
 
-    private HyperLogLogPlus(int p, int sp, List<byte[]> sparseSet, RegisterSet registerSet)
+    private HyperLogLogPlus(int p, int sp, List<Integer> sparseSet, RegisterSet registerSet)
     {
         if (p < 4 || (p > sp && sp != 0))
         {
@@ -294,10 +294,7 @@ public class HyperLogLogPlus implements ICardinality
             return 0;
         }
         int size = 0;
-        for (byte[] bytes : sparseSet)
-        {
-            size += bytes.length;
-        }
+        size += sparseSet.size() * Integer.SIZE / 8;
         return size;
     }
 
@@ -601,9 +598,9 @@ public class HyperLogLogPlus implements ICardinality
      * @param list the new list to add to
      * @param next the encoded value to compress and add
      */
-    private void deltaAdd(List<byte[]> list, int next)
+    private void deltaAdd(List<Integer> list, int next)
     {
-        list.add(Varint.writeUnsignedVarInt(next - prevMergedDelta));
+        list.add(next - prevMergedDelta);
         prevMergedDelta = next;
     }
 
@@ -617,9 +614,9 @@ public class HyperLogLogPlus implements ICardinality
      * @param i    index
      * @return uncompressed list entry
      */
-    private int deltaRead(List<byte[]> list, int i)
+    private int deltaRead(List<Integer> list, int i)
     {
-        int out = Varint.readUnsignedVarInt(list.get(i));
+        int out = list.get(i);
         if (i == prevDeltaReadIndex + 1)
         {
             out += prevDeltaRead;
@@ -669,10 +666,10 @@ public class HyperLogLogPlus implements ICardinality
      * @param tmp list to be merged
      * @return the new sparse set
      */
-    private List<byte[]> merge(List<byte[]> set, List<Integer> tmp)
+    private List<Integer> merge(List<Integer> set, List<Integer> tmp)
     {
         resetDelta();
-        List<byte[]> newSet = new ArrayList<byte[]>();
+        List<Integer> newSet = new ArrayList<Integer>();
 
         // iterate over each set and merge the result values
 
@@ -758,15 +755,15 @@ public class HyperLogLogPlus implements ICardinality
      * @return the new sparse set
      */
 
-    private List<byte[]> mergeEstimators(HyperLogLogPlus other)
+    private List<Integer> mergeEstimators(HyperLogLogPlus other)
     {
         other.mergeTempList();
         mergeTempList();
         resetDelta();
         other.resetDelta();
-        List<byte[]> set = sparseSet;
-        List<byte[]> tmp = other.sparseSet;
-        List<byte[]> newSet = new ArrayList<byte[]>();
+        List<Integer> set = sparseSet;
+        List<Integer> tmp = other.sparseSet;
+        List<Integer> newSet = new ArrayList<Integer>();
 
         // iterate over each set and merge the result values
 
@@ -854,9 +851,9 @@ public class HyperLogLogPlus implements ICardinality
             case SPARSE:
                 dos.write(Varint.writeUnsignedVarInt(1));
                 mergeTempList();
-                for (byte[] bytes : sparseSet)
+                for (Integer val : sparseSet)
                 {
-                    dos.write(bytes);
+                	Varint.writeUnsignedVarInt(val, dos);
                 }
                 break;
         }
@@ -1001,7 +998,7 @@ public class HyperLogLogPlus implements ICardinality
     }
 
     /** exposed for testing */
-    protected List<byte[]> getSparseSet()
+    protected List<Integer> getSparseSet()
     {
         return sparseSet;
     }
@@ -1072,12 +1069,12 @@ public class HyperLogLogPlus implements ICardinality
             else
             {
                 int l;
-                List<byte[]> rehydratedSet = new ArrayList<byte[]>();
+                List<Integer> rehydratedSet = new ArrayList<Integer>();
                 while ((l = oi.readInt()) > 0)
                 {
                     byte[] longArrayBytes = new byte[l];
                     oi.read(longArrayBytes, 0, l);
-                    rehydratedSet.add(longArrayBytes);
+                    rehydratedSet.add(Varint.readSignedVarInt(longArrayBytes));
                 }
                 HyperLogLogPlus hyperLogLogPlus = new HyperLogLogPlus(p, sp, rehydratedSet);
                 hyperLogLogPlus.format = Format.SPARSE;
@@ -1101,11 +1098,11 @@ public class HyperLogLogPlus implements ICardinality
             }
             else
             {
-                List<byte[]> rehydratedSet = new ArrayList<byte[]>();
+                List<Integer> rehydratedSet = new ArrayList<Integer>();
                 while (oi.available() > 0)
                 {
                     int l = Varint.readUnsignedVarInt(oi);
-                    rehydratedSet.add(Varint.writeUnsignedVarInt(l));
+                    rehydratedSet.add(l);
                 }
                 HyperLogLogPlus hyperLogLogPlus = new HyperLogLogPlus(p, sp, rehydratedSet);
                 hyperLogLogPlus.format = Format.SPARSE;

@@ -18,6 +18,8 @@ package com.clearspring.analytics.stream.cardinality;
 
 import org.junit.Test;
 
+import com.clearspring.analytics.util.Varint;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -345,8 +347,9 @@ public class TestHyperLogLogPlus
         dos.writeInt(25);
         dos.writeInt(1);
         baseline.mergeTempList();
-        for (byte[] bytes : baseline.getSparseSet())
+        for (Integer val : baseline.getSparseSet())
         {
+            byte [] bytes = Varint.writeSignedVarInt(val);
             dos.writeInt(bytes.length);
             dos.write(bytes);
         }
