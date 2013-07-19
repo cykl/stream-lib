@@ -938,13 +938,15 @@ public class HyperLogLogPlus implements ICardinality
         
         if (format == Format.NORMAL && other.format == Format.SPARSE)
         {
-            // Create a copy to avoid promoting other to normal mode
-            // This could be improved by a refactoring allowing to create a registerSet
-            // from a sparseSet. Merge would then be more efficient and cleaner.
             other.mergeTempList();
-            HyperLogLogPlus copy = new HyperLogLogPlus(p, sp, other.sparseSet);
-            copy.convertToNormal();
-            registerSet.merge(other.registerSet);
+            other.resetDelta();
+            for (int i = 0; i < sparseSet.size(); i++)
+            {
+                int k = deltaRead(sparseSet, i);
+                int idx = getIndex(k, p);
+                int r = decodeRunLength(k);
+                registerSet.updateIfGreater(idx, r);
+            }
             return;
         }
         
