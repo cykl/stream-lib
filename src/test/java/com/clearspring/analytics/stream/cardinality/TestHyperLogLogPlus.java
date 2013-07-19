@@ -185,7 +185,7 @@ public class TestHyperLogLogPlus
     public void testMergeSelf() throws CardinalityMergeException, IOException
     {
         final int[] cardinalities = { 0, 1, 10, 100, 1000, 10000, 100000 };
-        final int[] ps = { 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+        final int[] ps = { 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 };
         final int[] sps = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
 
         for (int cardinality : cardinalities)
