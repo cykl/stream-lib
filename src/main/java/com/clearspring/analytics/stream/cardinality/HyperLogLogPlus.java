@@ -950,13 +950,17 @@ public class HyperLogLogPlus implements ICardinality
         
         if (format == Format.NORMAL && other.format == Format.SPARSE)
         {
+            // Iterating over other's sparse set and updating only required indexes
+            // of this' register set is several orders of magnitude faster than copying 
+            // and converting other to normal mode. This use case is quite common since
+            // we tend to aggregate small sets to large sets.
             other.mergeTempList();
             other.resetDelta();
-            for (int i = 0; i < sparseSet.size(); i++)
+            for (int i = 0; i < other.sparseSet.size(); i++)
             {
-                int k = deltaRead(sparseSet, i);
-                int idx = getIndex(k, p);
-                int r = decodeRunLength(k);
+                int k = other.deltaRead(other.sparseSet, i);
+                int idx = other.getIndex(k, p);
+                int r = other.decodeRunLength(k);
                 registerSet.updateIfGreater(idx, r);
             }
             return;
