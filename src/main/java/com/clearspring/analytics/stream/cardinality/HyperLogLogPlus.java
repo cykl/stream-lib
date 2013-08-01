@@ -206,7 +206,8 @@ public class HyperLogLogPlus implements ICardinality
             this.sp = sp;
             sm = (int) Math.pow(2, sp);
             this.sparseSet = sparseSet;
-            sparseSetThreshold = 5000; // FIXME: See issue #38, our value has been hard coded
+            sparseSetThreshold = (int) (m * 0.75);
+//            sparseSetThreshold = 5000; // FIXME: See issue #38, our value has been hard coded
             sortThreshold = sparseSetThreshold / 4;
             tmpSet = new ArrayList<Integer>(sortThreshold);
         }
